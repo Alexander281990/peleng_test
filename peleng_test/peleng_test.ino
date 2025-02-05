@@ -10,14 +10,12 @@ void loop() {
     inputStr.trim(); // Убираем все пробелы в начале и конце строки
     if (inputStr.startsWith("eeprom ")) {
       String key = inputStr.substring(7, 9);
-      key.trim();
+      String keyAddres = inputStr.substring(10, 12);
+      int addres = inputStr.substring(13).toInt(); // Преобразуем строку в число
       if (key == "-r") {
-        String keyAddres = inputStr.substring(10, 12);
-        keyAddres.trim();
-        int addres = inputStr.substring(13).toInt(); // Преобразуем строку в число
         readEeprom(keyAddres, addres);
-      } else {
-        Serial.println("Ошибка: Неверная команда");
+      } else if (key == "-e") {
+        clearEeprom(keyAddres, addres);
       }
     } else {
       Serial.println("Ошибка: Неверная команда");
@@ -25,6 +23,8 @@ void loop() {
   }
 }
 
+
+//Функция для чтения ячейки памяти
 void readEeprom(String s, int address) {
   if (s == "-a") {
     int value = EEPROM.read(address);
@@ -32,6 +32,20 @@ void readEeprom(String s, int address) {
     Serial.print(address);
     Serial.print(": ");
     Serial.println(value);
+  } else {
+    Serial.println("Ошибка: Неверная команда");
+  }
+}
+
+
+// Функция для очистки ячейки памяти
+void clearEeprom(String s, int address) {
+  if (s == "-a") {
+    EEPROM.write(address, 0);
+    Serial.print("Значение по адресу ");
+    Serial.print(address);
+    Serial.print(": ");
+    Serial.println("Успешно стерто");
   } else {
     Serial.println("Ошибка: Неверная команда");
   }
