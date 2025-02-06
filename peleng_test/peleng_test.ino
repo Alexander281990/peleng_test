@@ -21,6 +21,8 @@ void loop() {
         String keyValue = inputStr.substring(vIndex, vIndex + 2);
         int writeValue = inputStr.substring(vIndex + 3).toInt();
         writeEeprom(keyAddres, addres, keyValue, writeValue);
+      } else if (key == "-d") {
+        writeDump();
       } else {
         Serial.println("Ошибка: Неверная команда");
       }
@@ -69,4 +71,28 @@ void writeEeprom(String s, int address, String kV, int wV) {
   } else {
     Serial.println("Ошибка: Неверная команда");
   }
+}
+
+void writeDump() {
+  for (int i = 0; i < EEPROM.length(); i++) {
+    if (i % 8 == 0) {
+      if (i > 0) {
+        Serial.println();
+      }
+      printDecimalAddress(i);
+      Serial.print(" : ");
+    }
+    int value = EEPROM.read(i);
+    if (value < 16) Serial.print("0"); // Добавляем ноль перед однозначными числами
+    Serial.print(value, HEX);
+    Serial.print(" ");
+  }
+  Serial.println(); // Добавляем перенос строки
+  Serial.println("Дамп завершен");
+}
+
+void printDecimalAddress(int address) {
+  char buffer[5];
+  sprintf(buffer, "%04d", address); // Форматируем адрес с ведущими нулями (4 символа)
+  Serial.print(buffer);
 }
