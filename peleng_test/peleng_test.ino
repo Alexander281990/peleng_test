@@ -7,21 +7,25 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     String inputStr = Serial.readString();
-    inputStr.trim(); // Убираем все пробелы в начале и конце строки
+    inputStr.trim();
     if (inputStr.startsWith("eeprom ")) {
-      String key = inputStr.substring(7, 9);
-      String keyAddres = inputStr.substring(10, 12);
-      int addres = inputStr.substring(13).toInt(); // Преобразуем строку в число
-      if (key == "-r") {
-        readEeprom(keyAddres, addres);
-      } else if (key == "-e") {
-        clearEeprom(keyAddres, addres);
-      } else if (key == "-w") {
-        int vIndex = inputStr.indexOf("-v"); // Узнаем с какой позиции начинается "-v"
-        String keyValue = inputStr.substring(vIndex, vIndex + 2);
-        int writeValue = inputStr.substring(vIndex + 3).toInt();
-        writeEeprom(keyAddres, addres, keyValue, writeValue);
-      } else if (key == "-d") {
+      String command = inputStr.substring(7); 
+      if (command.startsWith("-r -a ")) {
+        int address = command.substring(6).toInt();
+        readEeprom(address);
+      } else if (command.startsWith("-e -a ")) {
+        int address = command.substring(6).toInt();
+        clearEeprom(address);
+      } else if (command.startsWith("-w -a ")) {
+        int addrEnd = command.indexOf(" -v ");
+        if (addrEnd != -1) {
+          int address = command.substring(6, addrEnd).toInt();
+          int value = command.substring(addrEnd + 4).toInt();
+          writeEeprom(address, value);
+        } else {
+          Serial.println("Ошибка: Неверная команда");
+        }
+      } else if (command.equals("-d")) {
         writeDump();
       } else {
         Serial.println("Ошибка: Неверная команда");
@@ -32,47 +36,32 @@ void loop() {
   }
 }
 
-
-//Функция для чтения ячейки памяти
-void readEeprom(String s, int address) {
-  if (s == "-a") {
-    int value = EEPROM.read(address);
-    Serial.print("Значение по адресу ");
-    Serial.print(address);
-    Serial.print(": ");
-    Serial.println(value);
-  } else {
-    Serial.println("Ошибка: Неверная команда");
-  }
+// Функция для чтения ячейки памяти
+void readEeprom(int address) {
+  int value = EEPROM.read(address);
+  Serial.print("Значение по адресу ");
+  Serial.print(address);
+  Serial.print(": ");
+  Serial.println(value);
 }
 
-
 // Функция для очистки ячейки памяти
-void clearEeprom(String s, int address) {
-  if (s == "-a") {
-    EEPROM.write(address, 0);
-    Serial.print("Значение по адресу ");
-    Serial.print(address);
-    Serial.print(": ");
-    Serial.println("Успешно стерто");
-  } else {
-    Serial.println("Ошибка: Неверная команда");
-  }
+void clearEeprom(int address) {
+  EEPROM.write(address, 0);
+  Serial.print("Значение по адресу ");
+  Serial.print(address);
+  Serial.println(": Успешно стерто");
 }
 
 // Функция для записи ячейки памяти
-void writeEeprom(String s, int address, String kV, int wV) {
-  if (s == "-a" && kV == "-v") {
-    EEPROM.write(address, wV);
-    Serial.print("Значение по адресу ");
-    Serial.print(address);
-    Serial.print(": ");
-    Serial.println("Успешно записано");
-  } else {
-    Serial.println("Ошибка: Неверная команда");
-  }
+void writeEeprom(int address, int value) {
+  EEPROM.write(address, value);
+  Serial.print("Значение по адресу ");
+  Serial.print(address);
+  Serial.println(": Успешно записано");
 }
 
+// Функция для вывода дампа
 void writeDump() {
   for (int i = 0; i < EEPROM.length(); i++) {
     if (i % 8 == 0) {
@@ -87,10 +76,11 @@ void writeDump() {
     Serial.print(value, HEX);
     Serial.print(" ");
   }
-  Serial.println(); // Добавляем перенос строки
+  Serial.println();
   Serial.println("Дамп завершен");
 }
 
+// Функция для вывода 4 символов перед двоеточием в выводе дампа
 void printDecimalAddress(int address) {
   char buffer[5];
   sprintf(buffer, "%04d", address); // Форматируем адрес с ведущими нулями (4 символа)
